@@ -62,10 +62,11 @@ def upload_image(request):
         uploaded_path = image.image_file.url
         threshold = request.POST.get('threshold')
         angle = request.POST.get('angle')
+        scale = request.POST.get('scale')
          
         try:
             # detected_path = detect(uploaded_path, angle, int(threshold))
-            image_path, blurred_path, with_edges_path, detected_path = detect(uploaded_path, angle, int(threshold), image.id)
+            image_path, blurred_path, with_edges_path, detected_path = detect(uploaded_path, angle, scale, int(threshold), image.id)
 
             # image = Image.objects.get(path=detected_path)
             return JsonResponse({

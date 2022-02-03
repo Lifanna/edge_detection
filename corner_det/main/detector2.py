@@ -1,3 +1,6 @@
+from .mask03calc import Mask03Calc45, Mask03Calc90
+from .mask05calc import Mask05Calc45, Mask05Calc90
+from .mask07calc import Mask07Calc45, Mask07Calc90
 from .mask09calc import Mask09Calc45, Mask09Calc90
 from .convolute2 import convolute
 import cv2 as cv
@@ -64,7 +67,7 @@ def process_image(image_path, threshold, SITE_ROOT, M, N, n, Image, W, Mask, Mas
     return Image, Corners, Edges, Image
 
 
-def detect(image_path, angle, threshold, image_id):
+def detect(image_path, angle, scale, threshold, image_id):
     SITE_ROOT = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')
     main_folder = SITE_ROOT.split('/')[-1]
     SITE_ROOT = SITE_ROOT.replace(main_folder, '')
@@ -86,18 +89,30 @@ def detect(image_path, angle, threshold, image_id):
 
     Edges = np.zeros((M, N))
     Corners = np.zeros((M, N))
-    n = 9
+    n = int(scale)
     Mask = np.zeros((n, n))
     Mask09 = np.zeros((8, n, n))
 
-    # if angle == "45":
-    Mask09 = Mask09Calc45()
-    # elif angle == "45":
-    #     Mask09 = Mask09Calc90()
+    if angle == "45" and scale == "9":
+        Mask09 = Mask09Calc45()
+    elif angle == "90" and scale == "9":
+        Mask09 = Mask09Calc90()
+    elif angle == "45" and scale == "7":
+        Mask09 = Mask07Calc45()
+    elif angle == "90" and scale == "7":
+        Mask09 = Mask07Calc90()
+    elif angle == "45" and scale == "5":
+        Mask09 = Mask05Calc45()
+    elif angle == "90" and scale == "5":
+        Mask09 = Mask05Calc90()
+    elif angle == "45" and scale == "3":
+        Mask09 = Mask03Calc45()
+    elif angle == "90" and scale == "3":
+        Mask09 = Mask03Calc90()
 
     Conv = np.zeros(8)
     np.vectorize(Conv)
-    W = np.zeros((9, 9))
+    W = np.zeros((n, n))
 
     Image, Corners, Edges, Image = process_image(image_path, threshold, SITE_ROOT, M, N, n, Image, W, Mask, Mask09, Conv, Edges, Corners)
     C = np.dstack((Corners, Image, Image))
