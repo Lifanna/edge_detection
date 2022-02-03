@@ -1,0 +1,262 @@
+<html lang="{{ LANGUAGE_CODE }}">
+    <head>
+        <title>{% block title %}Детектор углов{% endblock %}</title>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+                content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        
+        <!-- <link rel="icon" type="image/png" sizes="16x16" href="/static/images/favicon.png"> -->
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <style>
+            .modal {
+                display:    none;
+                position:   fixed;
+                z-index:    1000;
+                top:        0;
+                left:       0;
+                height:     100%;
+                width:      100%;
+                background: rgba( 255, 255, 255, .8 ) 
+                            url('http://i.stack.imgur.com/FhHRx.gif') 
+                            50% 50% 
+                            no-repeat;
+            }
+
+            /* When the body has the loading class, we turn
+            the scrollbar off with overflow:hidden */
+            body.loading .modal {
+                overflow: hidden;   
+            }
+
+            /* Anytime the body has the loading class, our
+            modal element will be visible */
+            body.loading .modal {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+        <!-- <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script> -->
+        <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script> -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>        
+        <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(() => {
+                $('#loadingDiv')
+                    .hide()  // Hide it initially
+                    .ajaxStart(function() {
+                        $(this).show();
+                    })
+                    .ajaxStop(function() {
+                        $(this).hide();
+                    })
+                ;
+
+                $("#file").on('change', function(event) {
+                    //
+                });
+
+                $("#analyseBtn").click(() => {
+                    imageID = localStorage.getItem('imageID');
+                    paths = localStorage.getItem(imageID).split(' ');
+                    destinationPath = paths[0];
+                    blurredPath = paths[1];
+                    withEdgesPath = paths[2];
+                    detectedPath = paths[3];
+                    $body = $("body");
+
+                    var fdata = new FormData();
+                    fdata.append('destination', detectedPath);
+                    fdata.append('blurred', blurredPath);
+                    fdata.append('with_edges', withEdgesPath);
+                    fdata.append('detected', detectedPath);
+
+                    var destination = [], blurred = [], withEdges = [], detected = [];
+
+                    $.ajax({
+                        url: 'analyse',
+                        type: 'POST',
+                        beforeSend: function() { $body.addClass("loading"); },
+                        complete: function() { $body.removeClass("loading"); },
+                        data: fdata,
+                        contentType: false,
+                        // mimeType: "multipart/form-data",
+                        processData: false,
+                        success: (response) => {
+                            blurred = response.blurred;
+                            destination = response.destination;
+                            detected = response.detected;
+                            withEdges = response.withEdges;
+
+                            var blurredStruct = [], destinationStruct = [], withEdgesStruct = [], detectedStruct = [];
+                            
+                            blurred.forEach((element) => {
+                                element.forEach((eachElem) => {
+                                    blurredStruct.push({y: eachElem});
+                                });
+                            });
+
+                            destination.forEach((element) => {
+                                element.forEach((eachElem) => {
+                                    destinationStruct.push({y: eachElem});
+                                });
+                            });
+                            
+                            withEdges.forEach((element) => {
+                                element.forEach((eachElem) => {
+                                    withEdgesStruct.push({y: eachElem});
+                                });
+                            });
+                            
+                            detected.forEach((element) => {
+                                element.forEach((eachElem) => {
+                                    detectedStruct.push({y: eachElem});
+                                });
+                            });
+                            
+                            var chart1 = new CanvasJS.Chart("chartContainer1", {
+                                animationEnabled: true,
+                                theme: "light2",
+                                title:{
+                                    text: "Значения пикселей исходного изображения"
+                                },
+                                axisX: {
+                                    title: "порядковый номер пикселя",
+                                },
+                                axisY: {
+                                    title: "значение пикселя",
+                                },
+                                data: [{        
+                                    type: "line",
+                                    indexLabelFontSize: 16,
+                                    dataPoints: destinationStruct
+                                }]
+                            });
+                            
+                            chart1.render();
+                            
+                            var chart2 = new CanvasJS.Chart("chartContainer2", {
+                                animationEnabled: true,
+                                theme: "light2",
+                                title:{
+                                    text: "Значения пикселей изображения с шумом"
+                                },
+                                axisX: {
+                                    title: "порядковый номер пикселя",
+                                },
+                                axisY: {
+                                    title: "значение пикселя",
+                                },
+                                data: [{        
+                                    type: "line",
+                                    indexLabelFontSize: 16,
+                                    dataPoints: blurredStruct
+                                }]
+                            });
+
+                            chart2.render();
+                            
+                            var chart3 = new CanvasJS.Chart("chartContainer3", {
+                                animationEnabled: true,
+                                theme: "light2",
+                                title:{
+                                    text: "Значения пикселей изображения с краями"
+                                },
+                                axisX: {
+                                    title: "порядковый номер пикселя",
+                                },
+                                axisY: {
+                                    title: "значение пикселя",
+                                },
+                                // axisY: {
+                                //     prefix: "",
+                                //     interval : 0.1,
+                                //     maximum: 1,
+                                // },
+                                data: [{        
+                                    type: "line",
+                                    indexLabelFontSize: 16,
+                                    dataPoints: withEdgesStruct
+                                }]
+                            });
+
+                            chart3.render();
+
+                            var chart4 = new CanvasJS.Chart("chartContainer4", {
+                                animationEnabled: true,
+                                theme: "light2",
+                                title:{
+                                    text: "Значения пикселей изображения с найденными угловыми структурами"
+                                },
+                                axisX: {
+                                    title: "порядковый номер пикселя",
+                                },
+                                axisY: {
+                                    title: "значение пикселя",
+                                },
+                                data: [{        
+                                    type: "line",
+                                    indexLabelFontSize: 16,
+                                    dataPoints: detectedStruct
+                                }]
+                            });
+
+                            chart4.render();
+                        },
+                    });
+
+
+
+                });
+
+                $("#uploadBtn").click(() => {
+                    var fd = new FormData();
+                    var fdata = new FormData($('#form').get(0));
+                    var files = $('#file')[0].files;
+                    
+                    if (files.length > 0 ){
+                        fd.append('file', files[0]);
+                        var qwe = $("[name='csrfmiddlewaretoken']").val();
+                        
+                        fdata.append('filename', files[0].name)
+                        $body = $("body");
+                        $.ajax({
+                            url: 'upload_image',
+                            type: 'POST',
+                            beforeSend: function() { $body.addClass("loading"); },
+                            complete: function() { $body.removeClass("loading"); },
+                            data: fdata,
+                            contentType: false,
+                            // mimeType: "multipart/form-data",
+                            processData: false,
+                            success: (response) => {
+                                if (response.error != 'err') {
+                                    $("#img1").attr("src", response.destination);
+                                    localStorage.setItem('imageID', response.imageID);
+                                    localStorage.setItem(response.imageID, response.destination + ' ' + response.blurred + ' ' + response.withEdges + ' ' + response.detected);
+                                    $("#img2").attr("src", response.detected);
+                                    $("#img3").attr("src", response.blurred);
+                                    $("#img4").attr("src", response.withEdges);
+                                }
+                                else {
+                                    alert(response.message);
+                                }
+                            },
+                        });
+                    }
+                    else {
+                        alert("Пожалуйста, выберите файл");
+                    }
+                });
+            })
+        </script>
+    </body>
+</html>

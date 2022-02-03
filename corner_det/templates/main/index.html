@@ -1,0 +1,59 @@
+{% extends 'layout.html' %}
+{% block title %} Детектор углов {% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg rounded">
+                <div class="card-body text-center">
+                    Детектор углов
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card shadow-lg rounded">
+                <div class="card-body text-center">
+                    <div class="modal"></div>
+                    <form id="form" method="post" action="" enctype="multipart/form-data" id="myform">
+                        {% csrf_token %}
+                        <div class='preview'>
+                            <img src="" alt="Исходное Изображение" id="img1" width="300" height="300">
+                            <img src="static/background_wall.jpg" alt="Изображение с углами" id="img2" width="300" height="300">
+                            <img src="static/background_wall.jpg" alt="Изображение с примененным фильтром Гаусса" id="img3" width="300" height="300">
+                            <img src="static/background_wall.jpg" alt="Изображение с краями" id="img4" width="300" height="300">
+                        </div>
+                        <div class="mt-4 col-sm-12">
+                            <input type="file" id="file" class="form-control m-2" name="file" />
+                            <input type="text" id="threshold" class="form-control m-2" placeholder="Введите порог" name="threshold" />
+                            <select name="angle" class="form-control m-2">
+                                <option disabled selected>Выберите угол</option>
+                                <option value="45">45</option>
+                                <option value="90">90</option>
+                            </select>
+
+                            <select name="zoom" class="form-control m-2">
+                                <option disabled selected>Выберите масштаб</option>
+                                <option value="120">120%</option>
+                                <option value="150">150%</option>
+                            </select>
+
+                            <input type="button" class="btn btn-primary" value="Загрузить" id="uploadBtn">
+                            <input type="button" class="btn btn-success" value="Анализ" id="analyseBtn">
+                        </div>
+                        <div class="mt-4 col-sm-12">
+                            <div id="chartContainer1" style="height: 370px; width: 100%;"></div>
+                        </div>
+                        <div class="mt-4 col-sm-12">
+                            <div id="chartContainer2" style="height: 370px; width: 100%;"></div>
+                        </div>
+                        <div class="mt-4 col-sm-12">
+                            <div id="chartContainer3" style="height: 370px; width: 100%;"></div>
+                        </div>
+                        <div class="mt-4 col-sm-12">
+                            <div id="chartContainer4" style="height: 370px; width: 100%;"></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
