@@ -46,6 +46,41 @@ $(document).ready(() => {
         );
     });
 
+    $("#addNewImgHarrisBtn").click(() => {
+        // var csrftoken = document.cookie.match("csrftoken").input.replace('csrftoken=', '');
+        var imagesCount = $('div[id^="photoDivHarris"]').length + 1;
+        
+        $("#prependDiv").append(`
+            <div id="photoDivHarris` + imagesCount + `" class="col-12 mt-2">
+                <div class="card shadow-lg rounded">
+                    <div class="card-body text-center">
+                        <form id="formHarris` + imagesCount + `" method="post" action="" enctype="multipart/form-data" id="myform">
+                            <div class="mt-4 col-sm-12">
+                                <div class="uploader">
+                                    <img class="img-fluid rounded" id="newImgHarris` + imagesCount + `" src="">
+                                    <input type="file" name="file" class="filePhotoClass" id="filePhotoHarris` + imagesCount + `"/>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card shadow-lg rounded">
+                    <div class="card-body text-center">
+                        <input type="text" id="blockSize` + imagesCount + `" class="form-control m-2" placeholder="Введите block size" name="threshold" />
+                        <input type="text" id="ksize` + imagesCount + `" class="form-control m-2" placeholder="Введите ksize" name="threshold" />
+                        <input type="text" id="k` + imagesCount + `" class="form-control m-2" placeholder="Введите k" name="threshold" />
+                    </div>
+                </div>
+                <div class="card shadow-lg rounded">
+                    <div class="card-body text-center">
+                        <input type="button" class="btn btn-primary" value="Calculate Harris" id="uploadHarrisBtn` + imagesCount + `">
+                        <input type="button" class="btn btn-danger" value="Remove" id="removeHarrisBtn` + imagesCount + `">
+                    </div>
+                </div>
+            </div>`
+        );
+    });
+
     $('#loadingDiv')
         .hide()  // Hide it initially
         .ajaxStart(function() {
@@ -86,6 +121,57 @@ $(document).ready(() => {
             fdata.append('threshold', $("#threshold" + id).val());
             fdata.append('angle', $("#angleSelect" + id).val());
             fdata.append('scale', $("#scaleSelect" + id).val());
+            fdata.append('filename', files[0].name)
+            $body = $("body");
+
+            $.ajax({
+                url: 'upload_image',
+                type: 'POST',
+                beforeSend: function() { $body.addClass("loading"); },
+                complete: function() { $body.removeClass("loading"); },
+                data: fdata,
+                contentType: false,
+                // mimeType: "multipart/form-data",
+                processData: false,
+                success: (response) => {
+                    if (response.error != 'err') {
+                        localStorage.setItem('imageID', response.imageID);
+                        localStorage.setItem(response.imageID, response.destination + ' ' + response.blurred + ' ' + response.withEdges + ' ' + response.detected);
+                        
+                        $("#detectedDiv" + id).remove();
+                        $("#photoDiv" + id).append(`
+                            <div class="card shadow-lg rounded" id="detectedDiv` + id + `">
+                                <img class="img-fluid rounded" id="` + id + `" src="">
+                                <img src="` + response.detected + `" alt="Изображение с углами" id="imgCorners` + id + `" width="300" height="300">
+                                <img src="` + response.blurred + `" alt="Изображение с примененным случайным шумом" id="imgFiltered` + id + `" width="300" height="300">
+                                <img src="` + response.withEdges + `" alt="Изображение с краями" id="imgWithEdges` + id + `" width="300" height="300">
+                            </div>
+                        `)
+                    }
+                    else {
+                        alert(response.message);
+                    }
+                },
+            });
+        }
+        else {
+            alert("Пожалуйста, заполните необходимые поля");
+        }
+    });
+
+    $(document).on("click", "input[id^='uploadHarrisBtn']", (event) => {
+        var id = event.target.id.replace('uploadHarrisBtn', '');
+
+        var fdata = new FormData($('#form' + id).get(0));
+
+        var files = $('#filePhoto' + id)[0].files;
+        var angleSelected = $('#angleSelect' + id).val();
+        var scaleSelected = $('#scaleSelect' + id).val();
+        
+        if ((files.length > 0 ) && ($("#threshold" + id).val() && angleSelected && scaleSelected)) {
+            fdata.append('blockSize', $("#blockSize" + id).val());
+            fdata.append('ksize', $("#ksize" + id).val());
+            fdata.append('k', $("#k" + id).val());
             fdata.append('filename', files[0].name)
             $body = $("body");
 
