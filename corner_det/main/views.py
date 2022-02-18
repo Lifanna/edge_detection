@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import ImageForm
 from .detector2 import detect
+from .detectorHarris import detect_harris
 from datetime import date, datetime
 from .models import Image
 from django.views.decorators.csrf import csrf_exempt
@@ -63,7 +64,7 @@ def upload_image(request):
         threshold = request.POST.get('threshold')
         angle = request.POST.get('angle')
         scale = request.POST.get('scale')
-         
+        
         try:
             # detected_path = detect(uploaded_path, angle, int(threshold))
             image_path, blurred_path, with_edges_path, detected_path = detect(uploaded_path, angle, scale, int(threshold), image.id)
@@ -75,6 +76,45 @@ def upload_image(request):
                 'destination': image_path,
                 'blurred': blurred_path,
                 'withEdges': with_edges_path,
+                'detected': detected_path,
+            })
+        except Exception as e:
+            import traceback, sys
+            print(traceback.format_exc())
+            # print(sys.exc_info()[2])
+            return JsonResponse({'error': 'err', 'message': 'Внутренняя ошибка сервера'})
+    # else:
+    #     return JsonResponse({'error': 'file does not saved'})
+        # form = ImageForm()
+    return JsonResponse({'error': 'err', 'message': 'Внутренняя ошибка сервера'})
+
+@csrf_exempt
+def upload_image_harris(request):
+    if request.method == 'POST':
+        form = ImageForm(request.POST.get('file'), request.FILES)
+        fileName, fileExtension = os.path.splitext(request.POST.get('filename'))
+        
+        if fileExtension != ".jpeg":
+            if fileExtension != ".jpg":
+                return JsonResponse({'error': 'err', 'message': 'Файл с неправильным форматом'})
+        # if form.is_valid():
+        now = datetime.now()
+        date_time = now.strftime("%d_%m_%Y_%H_%M_%S")
+        image = Image(path = "images/%s/"%date_time, image_file=request.FILES['file'])
+        image.save()
+
+        uploaded_path = image.image_file.url
+        block_size = request.POST.get('blockSize')
+        kernel_size = request.POST.get('ksize')
+        k = request.POST.get('k')
+        
+        try:
+            detected_path = detect_harris(uploaded_path, block_size, kernel_size, k, image.id)
+
+            return JsonResponse({
+                'imageID': image.id,
+                'error': 'no',
+                'destination': uploaded_path,
                 'detected': detected_path,
             })
         except Exception as e:

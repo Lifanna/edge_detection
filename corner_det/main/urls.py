@@ -11,6 +11,7 @@ from . import views
 urlpatterns = [
     path('', views.index,),
     path('upload_image', views.upload_image,),
+    path('upload_image_harris', views.upload_image_harris,),
     path('analyse', views.analyse,),
 ]
 
